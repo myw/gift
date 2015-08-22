@@ -16,11 +16,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from setuptools import setup
-setup(name='YourAppName',
-      version='1.0',
-      description='OpenShift App',
-      author='Your Name',
-      author_email='example@example.com',
-      url='http://www.python.org/sigs/distutils-sig/',
-#      install_requires=['Django>=1.3'],
-     )
+setup(
+  name='gift',
+  version='0.1.0',
+  description='A gift for you to view in the Default World',
+  author='Misha Wolfson',
+  author_email='gmail: mywolfson',
+  url='http://www.python.org/sigs/distutils-sig/',
+)
