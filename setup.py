@@ -23,4 +23,5 @@ setup(
   author='Misha Wolfson',
   author_email='gmail: mywolfson',
   url='http://www.python.org/sigs/distutils-sig/',
+  install_requires=['Flask >= 0.10.1'],
 )
