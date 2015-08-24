@@ -1,11 +1,12 @@
-from flask import Flask, redirect, render_template, request, url_for
+import os
+from flask import Flask, redirect, render_template, request, Response, url_for
 
 
 app = Flask(__name__)
 
 
 @app.route('/')
-def index():
+def index() -> Response:
   """ Render the index page, which prompts the user for a word """
   word = request.values.get('word', None)
 
@@ -16,7 +17,7 @@ def index():
 
 
 @app.route('/<word>')
-def gift(word=None):
+def gift(word:str=None) -> Response:
   """ Render the page that shows the gift, given a seed word """
   # Always redirect to a canonical, lower-case representation of the word
   lowerword = word.lower()
@@ -26,10 +27,26 @@ def gift(word=None):
     return redirect(url_for('gift', word=lowerword))
 
 
-@app.route('/favicon.ico')
-def favicon():
-  """ Render the favicon """
-  return redirect(url_for('static', filename='favicon.ico'))
+def static_reroute(filename:str) -> callable:
+  """ Factory for making view functions that redirect to a static file """
+
+  # Make a generic redirection function
+  def redirected():
+    """ Render the redirected file """
+    return redirect(url_for('static', filename=filename))
+
+  # Get the base of the filename, to use as the function name
+  (base, _) = os.path.splitext(filename)
+
+  # Rename the function
+  redirected.__name__ = base
+
+  # Make the route last: if you make it before you rename the function, you'll
+  # get conflicts
+  return app.route('/' + filename)(redirected)
+
+favicon = static_reroute('favicon.ico')
+browserconfig = static_reroute('browserconfig.xml')
 
 
 if __name__ == '__main__':
