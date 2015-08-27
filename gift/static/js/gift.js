@@ -25,6 +25,17 @@ Gift = function (_, Chance, d3) {
     // Parameterize the drawing with the word
     this.chance = new Chance(_calculateSeed(word));
 
+    // Work in normalized coordinates
+    this.scales = {};
+
+    this.scales.width = d3.scale.linear()
+      .domain([0, 1])
+      .range([0, this.width]);
+
+    this.scales.height = d3.scale.linear()
+      .domain([0, 1])
+      .range([0, this.height]);
+
     // Create the drawing
     this.svg = d3.select(node).append('svg')
       .attr({ width: this.width, height: this.height });
@@ -40,10 +51,9 @@ Gift = function (_, Chance, d3) {
     var height = this.height;
     var width = this.width;
 
-    // Map the row indices to appropriate y coordinates
-    rowScale = d3.scale.linear()
-      .domain([-1, word.length])
-      .range([0, height]);
+    function _indexToFraction(index, maxIndex) {
+      return (index  + 1) / (maxIndex);
+    }
 
     return _(word)
       // Convert each character in the word into a binary number
@@ -56,11 +66,6 @@ Gift = function (_, Chance, d3) {
         // Calculate the y value for this row
         var trimmedString = rowBinaryString.substring(2);
 
-        // Map the column indices to appropriate x coordinates
-        var colScale = d3.scale.linear()
-          .domain([-1, trimmedString.length])
-          .range([0, width]);
-
         _.forEach(trimmedString, function (digit, columnIndex) {
 
           // If this column corresponds to a 1, calculate its coordinate and
@@ -68,8 +73,8 @@ Gift = function (_, Chance, d3) {
           if (parseInt(digit, 2)) {
             gridPoints.push({
               id: ++pointIndex,
-              x: colScale(columnIndex),
-              y: rowScale(rowIndex),
+              x: _indexToFraction(columnIndex, trimmedString.length),
+              y: _indexToFraction(rowIndex, word.length),
             });
           }
         });
@@ -78,20 +83,83 @@ Gift = function (_, Chance, d3) {
       }).value();
   };
 
-  Drawing.prototype.draw = function () {
-    var gridPoints;
+  Drawing.prototype._calculatePeaks = function (gridPoints) {
     var self = this;
 
-    // Parameterize the drawing with the word
-    gridPoints = self._calculateGridPoints();
+    var pointsPerRow = 50;
 
-    _.forEach(gridPoints, function (points) {
-      self.svg.selectAll('circle')
-        .data(points, function (d) { return d.id; }).enter()
-          .append('circle')
-            .attr('cx', function (d) { return d.x; })
-            .attr('cy', function (d) { return d.y; })
-            .attr('r', 5);
+    function _peak(relX, center, width) {
+      // Deals with scaled units (0, 1)
+      var peakHeight =  (1 - Math.abs(center - relX) / width);
+
+      // No negative peak heights
+      return peakHeight < 0 ? 0 : peakHeight;
+    }
+
+    return _.map(gridPoints, function (row, rowIndex) {
+      // Deals with scaled units (0, 1)
+      var relXs = d3.range(0, 1, 1 / pointsPerRow);
+      var peaks = [];
+
+      _.forEach(row, function (gridPoint) {
+        // Pick a peak center and width with some noise
+        var peakCenter = gridPoint.x + self.chance.floating({min: -0.1, max: 0.1});
+        var peakWidth = 0.25 + self.chance.floating({min: -0.05, max: 0.05});
+
+        var peak = _.map(relXs, function (relX) {
+          return _peak(
+            relX,
+            peakCenter,
+            peakWidth
+          );
+        });
+
+        peak[0] = 0;
+        peak[peak.length - 1] = 0;
+        peaks.push(peak);
+      });
+
+      // Sum along the columns
+      relYs = _.map(_.range(peaks[0].length), function () { return 0; });
+      _.forEach(peaks, function (peak) {
+        _.forEach(peak, function (peakHeight, xPosition) {
+          relYs[xPosition] += peakHeight;
+        });
+      });
+
+
+      // Normalize and center
+      var heightScale = (_.max(relYs) * (gridPoints.length + 1) * 1.25);
+      relYs = _.map(relYs, function (y) { return row[0].y - y / heightScale; });
+
+      return _.map(_.zip(relXs, relYs), function (xy) {
+        return {
+          id: rowIndex,
+          x: xy[0],
+          y: xy[1],
+        };
+      });
+    });
+  };
+
+  Drawing.prototype.draw = function () {
+    var self = this;
+
+    var lineGen = d3.svg.line()
+      .x(function (d) { return self.scales.width(d.x); })
+      .y(function (d) { return self.scales.height(d.y); })
+      .interpolate('basis');
+
+    // Parameterize the drawing with the word
+    var gridPoints = self._calculateGridPoints();
+    var peakLines = self._calculatePeaks(gridPoints);
+
+    _.forEach(peakLines, function (peakLine) {
+      self.svg.selectAll('path.peak')
+        .data(peakLine, function (d) { return d.id; }).enter()
+          .append('svg:path')
+            .attr('d', lineGen(peakLine))
+            .attr('class', 'peak');
     });
 
     return self;

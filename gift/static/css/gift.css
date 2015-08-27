@@ -1,8 +1,13 @@
 .giftcanvas {
   width: 45em;
   height: 45em;
-  background: red;
-  border: 1px solid #999;
+  border: 1px solid #967b63;
   margin: auto;
   margin-top: 3em;
+  background: #98816c;
 }
+
+path.peak {
+  fill: #62697d;
+}
+
