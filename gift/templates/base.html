@@ -27,16 +27,17 @@
                 to improve your experience.
             </p>
         <![endif]-->
+
         <div class="container">
-        <header>
-            {% block header %}{% endblock %}
-        </header>
-        <main role="main">
+            <header>
+                {% block header %}{% endblock %}
+            </header>
+
             {% block body %}{% endblock %}
-        </main>
-        <footer>
-            {% block footer %}{% endblock %}
-        </header>
+
+            <footer>
+                {% block footer %}{% endblock %}
+            </footer>
         </div><!-- /.container -->
 
         {% block javascript %}

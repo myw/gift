@@ -17,7 +17,7 @@ def index() -> Response:
 
 
 @app.route('/<word>')
-def gift(word:str=None) -> Response:
+def gift(word: str=None) -> Response:
   """ Render the page that shows the gift, given a seed word """
   # Always redirect to a canonical, lower-case representation of the word
   lowerword = word.lower()
@@ -27,7 +27,7 @@ def gift(word:str=None) -> Response:
     return redirect(url_for('gift', word=lowerword))
 
 
-def static_reroute(filename:str) -> callable:
+def static_reroute(filename: str) -> callable:
   """ Factory for making view functions that redirect to a static file """
 
   # Make a generic redirection function
@@ -44,6 +44,7 @@ def static_reroute(filename:str) -> callable:
   # Make the route last: if you make it before you rename the function, you'll
   # get conflicts
   return app.route('/' + filename)(redirected)
+
 
 favicon = static_reroute('favicon.ico')
 browserconfig = static_reroute('browserconfig.xml')

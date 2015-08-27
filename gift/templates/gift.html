@@ -1,13 +1,27 @@
 {% extends "base.html" %}
 {% block title %}{{ word }}{% endblock %}
 
+{% block customhead %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/gift.css') }}">
+{% endblock %}
+
 {% block header %}
-<h2 class="text-center">{{ word }}</h2>
+    <h2 class="text-center">{{ word }}</h2>
 {% endblock %}
 
 {% block body %}
+    <div id="giftcanvas" class="giftcanvas"></div>
 {% endblock %}
 
 {% block customjavascript %}
-<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/chance/0.5.6/chance.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.min.js"></script>
+    <script src="{{ url_for('static', filename='js/gift.js') }}"></script>
+    <script>
+        $(function () {
+            Gift(_, Chance, d3).makeGift({{ word|tojson }}, $('#giftcanvas').get(0));
+        });
+    </script>
+
 {% endblock %}
